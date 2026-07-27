@@ -55,7 +55,8 @@ class VisualGridHuntGame:
             'hit_wall': tuple(self.agent_pos) in self.walls,
             'collision': self.collision,
             'score': self.score,
-            'remaining_food': len(self.food_positions)
+            'remaining_food': len(self.food_positions),
+            'smells_toxin': tuple(self.agent_pos) in self.toxic_traps 
         }
 
     def execute_action(self, action: str):
@@ -75,6 +76,9 @@ class VisualGridHuntGame:
             self.score -= 5
         else:
             self.agent_pos = new_pos
+
+            if tuple(self.agent_pos) in self.toxic_traps:
+                self.score -= 15
 
         tuple_pos = tuple(self.agent_pos)
         if tuple_pos in self.food_positions:
@@ -160,6 +164,13 @@ class GridGameGUI:
             y1 = (self.env.height - 1 - oy) * self.cell_size + offset
             self.canvas.create_rectangle(x1, y1, x1 + self.cell_size * 0.6, y1 + self.cell_size * 0.6, fill="#990000",
                                          outline="#7a0000")
+        
+        for tx, ty in self.env.toxic_traps:
+            offset = self.cell_size * 0.2
+            x1 = tx * self.cell_size + offset
+            y1 = (self.env.height - 1 - ty) * self.cell_size + offset
+            self.canvas.create_oval(x1, y1, x1 + self.cell_size * 0.6, y1 + self.cell_size * 0.6, fill="#800080", outline="#4B0082")
+
 
         ax, ay = self.env.agent_pos
         offset = self.cell_size * 0.15
