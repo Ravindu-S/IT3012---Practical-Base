@@ -47,16 +47,33 @@ class VisualGridHuntGame:
         self.steps = 0
         self.collision = False
 
-    def get_percept(self) -> dict:
+def get_percept(self) -> dict:
+        # determine the coordinates of the adjacent cell ahead based on current facing direction
+        x, y = self.agent_pos
+        ahead_x, ahead_y = x, y
+
+        if self.facing == 'Up':
+            ahead_y = min(self.height - 1, y + 1)
+        elif self.facing == 'Down':
+            ahead_y = max(0, y - 1)
+        elif self.facing == 'Left':
+            ahead_x = max(0, x - 1)
+        elif self.facing == 'Right':
+            ahead_x = min(self.width - 1, x + 1)
+
+        ahead_pos = (ahead_x, ahead_y)
+
         return {
-            'agent_pos': list(self.agent_pos),
-            'opponent_positions': [list(op) for op in self.opponents],
-            'smells_food': tuple(self.agent_pos) in self.food_positions,
+            'wall_ahead': ahead_pos in self.walls,
+            'food_here': tuple(self.agent_pos) in self.food_positions,
+            'food_ahead': ahead_pos in self.food_positions,
+            'opponent_ahead': [list(op) for op in self.opponents] and any(tuple(op) == ahead_pos for op in self.opponents),
+            'toxin_ahead': ahead_pos in self.toxic_traps,
             'hit_wall': tuple(self.agent_pos) in self.walls,
             'collision': self.collision,
             'score': self.score,
             'remaining_food': len(self.food_positions),
-            'smells_toxin': tuple(self.agent_pos) in self.toxic_traps 
+            'smells_toxin': tuple(self.agent_pos) in self.toxic_traps
         }
 
     def execute_action(self, action: str):
