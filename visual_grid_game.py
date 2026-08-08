@@ -125,17 +125,64 @@ class VisualGridHuntGame:
         return len(self.food_positions) == 0 or self.steps >= 60 or self.collision
 
 
-class SimpleReflexAgent:
+class ModelBasedAgent:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.rel_pos = (0, 0)
+        self.visited_cells = {(0, 0)}
+        self.last_action = None
+
     def sense_and_act(self, percept):
         directions = ['Up', 'Right', 'Down', 'Left']
         facing = percept['facing']
         idx = directions.index(facing)
 
         if percept['food_here']:
+            self.last_action = 'Stay'
             return 'Stay'
-        if percept['wall_ahead']:
-            return directions[(idx - 1) % 4]
-        return facing
+
+        blocked_ahead = percept['wall_ahead'] or self._at_edge(facing)
+
+        left_dir = directions[(idx - 1) % 4]
+        right_dir = directions[(idx + 1) % 4]
+        left_cell = self._peek(left_dir)
+        right_cell = self._peek(right_dir)
+
+        if blocked_ahead:
+            left_is_visited = left_cell in self.visited_cells
+            action = right_dir if left_is_visited else left_dir
+        else:
+            action = facing
+
+        self.rel_pos = self._peek(action)
+        self.visited_cells.add(self.rel_pos)
+        self.last_action = action
+        return action
+
+    def _at_edge(self, direction):
+        x, y = self.rel_pos
+        if direction == 'Up':
+            return y >= self.height - 1
+        if direction == 'Down':
+            return y <= 0
+        if direction == 'Left':
+            return x <= 0
+        if direction == 'Right':
+            return x >= self.width - 1
+        return False
+
+    def _peek(self, direction):
+        x, y = self.rel_pos
+        if direction == 'Up':
+            y += 1
+        elif direction == 'Down':
+            y -= 1
+        elif direction == 'Left':
+            x -= 1
+        elif direction == 'Right':
+            x += 1
+        return (x, y)
 
 
 class GridGameGUI:
@@ -147,7 +194,7 @@ class GridGameGUI:
 
         self.env = VisualGridHuntGame(width=width, height=height, num_food=num_food, num_opponents=num_opponents,
                                       custom_walls=walls)
-        self.agent = SimpleReflexAgent()
+        self.agent = ModelBasedAgent(self.env.width, self.env.height)
 
         # Dynamically calculate cell size so the total canvas fits nicely within a 600x600 window ceiling
         max_canvas_dim = 600
