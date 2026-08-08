@@ -46,8 +46,9 @@ class VisualGridHuntGame:
         self.score = 0
         self.steps = 0
         self.collision = False
+        self.facing = 'Up'
 
-def get_percept(self) -> dict:
+    def get_percept(self) -> dict:
         # determine the coordinates of the adjacent cell ahead based on current facing direction
         x, y = self.agent_pos
         ahead_x, ahead_y = x, y
@@ -64,10 +65,11 @@ def get_percept(self) -> dict:
         ahead_pos = (ahead_x, ahead_y)
 
         return {
+            'facing': self.facing,
             'wall_ahead': ahead_pos in self.walls,
             'food_here': tuple(self.agent_pos) in self.food_positions,
             'food_ahead': ahead_pos in self.food_positions,
-            'opponent_ahead': [list(op) for op in self.opponents] and any(tuple(op) == ahead_pos for op in self.opponents),
+            'opponent_ahead': any(tuple(op) == ahead_pos for op in self.opponents),
             'toxin_ahead': ahead_pos in self.toxic_traps,
             'hit_wall': tuple(self.agent_pos) in self.walls,
             'collision': self.collision,
@@ -78,6 +80,8 @@ def get_percept(self) -> dict:
 
     def execute_action(self, action: str):
         self.steps += 1
+        if action in ('Up', 'Down', 'Left', 'Right'):
+            self.facing = action
         new_pos = list(self.agent_pos)
 
         if action == 'Up':
